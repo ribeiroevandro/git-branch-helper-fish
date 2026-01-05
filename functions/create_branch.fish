@@ -112,7 +112,7 @@ function create_branch -d "Criar branches Git com padrão personalizado"
 
     # 2. Obter o nome da branch (argumento ou prompt)
     if test -z "$branch_name"
-        read -P "📝 Digite o nome da branch (ex: migração de tela xpto): " branch_name
+        read -P "📝 Digite o nome da branch (ex: migracao de tela xpto): " branch_name
         set -l read_exit_code $status
         if test $read_exit_code -eq 130
             echo "❌ Operação cancelada."
@@ -143,7 +143,7 @@ function create_branch -d "Criar branches Git com padrão personalizado"
                     string replace -ra '[ñ]' 'n' | \
                     string replace -ra '[^a-z0-9\s]' '' | \
                     string replace -ra '\s+' '-' | \
-                    string replace -ra '^-+|-+$' '')
+                    string replace -ra '-+$' '')
 
     # 4. Criar nome da branch no padrão especificado
     set -l username $GIT_BRANCH_USERNAME
@@ -155,16 +155,16 @@ function create_branch -d "Criar branches Git com padrão personalizado"
     set -l allowed_prefixes $GIT_BRANCH_ALLOWED_PREFIXES
 
     # Filtrar apenas diretórios que existem (configs apontando para paths inexistentes não devem ativar username)
-    set -l existing_prefixes
+    set -l verified_prefixes
     for prefix in $allowed_prefixes
         if test -d "$prefix"
-            set existing_prefixes $existing_prefixes "$prefix"
+            set verified_prefixes $verified_prefixes "$prefix"
         end
     end
 
     # Aplicar username apenas quando há diretórios válidos E o diretório atual casa com algum prefixo válido
     if test -n "$username"
-        for prefix in $existing_prefixes
+        for prefix in $verified_prefixes
             set -l escaped_prefix (string escape --style=regex $prefix)
             set -l prefix_regex (string join '' '^' $escaped_prefix '(/|$)')
             if string match -rq -- $prefix_regex $current_dir
@@ -205,8 +205,8 @@ function create_branch -d "Criar branches Git com padrão personalizado"
     end
 
     # Criar e fazer checkout para a nova branch
-    # Obs: não use `--` após `-c`, pois `-c` consome o próximo argumento como nome da branch
-    # e o Git passa a interpretar o nome como "start point" (gerando: fatal: invalid reference: <branch>)
+    # Obs: aqui não usamos `--` como separador, pois `-c` já consome o próximo argumento como nome da branch
+    # e `$full_branch_name` já foi normalizado, sem caracteres especiais que exijam o uso de `--` para desambiguação
     if git switch -c $full_branch_name
         echo ""
         echo "🎉 Branch '$full_branch_name' criada e ativada com sucesso!"

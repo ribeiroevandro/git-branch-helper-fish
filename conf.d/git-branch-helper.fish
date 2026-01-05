@@ -2,7 +2,7 @@
 
 # Hook de desinstalação (Fisher emite `<nome>_uninstall` para cada arquivo em conf.d)
 # Este arquivo se chama `git-branch-helper.fish`, então o evento é `git-branch-helper_uninstall`.
-function __git_branch_helper_uninstall --on-event git-branch-helper_uninstall
+function git-branch-helper_uninstall --on-event git-branch-helper_uninstall
     # Remover arquivo de configuração persistida (sem usar variáveis universais)
     set -l __gbh_root $__fish_config_dir
     if test -z "$__gbh_root"
@@ -26,7 +26,8 @@ end
 # Sem defaults: o usuário deve configurar via `git_branch_config`
 
 # Mensagem de boas-vindas (uma vez por sessão interativa; sem persistência)
-if status is-interactive; and not set -q __git_branch_helper_loaded
+# Pode ser desativada definindo a variável `GIT_BRANCH_HELPER_NO_WELCOME` (por exemplo, em config.fish).
+if status is-interactive; and not set -q __git_branch_helper_loaded; and not set -q GIT_BRANCH_HELPER_NO_WELCOME
     set -g __git_branch_helper_loaded 1
     echo "🐚 Git Branch Helper carregado! Use 'create_branch' para começar. Dica: 'git_branch_config help' para configurar."
 end
