@@ -44,25 +44,25 @@ function git_branch_config -d "Configurar Git Branch Helper"
         echo ""
 
         read -P "Escolha [1/2] (Enter = 1): " choice
-        set -l __read_status $status
-        if test $__read_status -eq 130
+        set -l read_exit_code $status
+        if test $read_exit_code -eq 130
             echo "❌ Operação cancelada."
             return 130
-        else if test $__read_status -ne 0
+        else if test $read_exit_code -ne 0
             echo "❌ Operação cancelada."
             return 130
         end
 
         set -l selected ""
-        if test -z "$choice" -o "$choice" = 1
+        if test -z "$choice"; or test "$choice" = 1
             set selected (whoami)
         else if test "$choice" = 2
             read -P "Digite o username: " selected
-            set -l __read_status $status
-            if test $__read_status -eq 130
+            set -l read_exit_code $status
+            if test $read_exit_code -eq 130
                 echo "❌ Operação cancelada."
                 return 130
-            else if test $__read_status -ne 0
+            else if test $read_exit_code -ne 0
                 echo "❌ Operação cancelada."
                 return 130
             end
@@ -99,7 +99,7 @@ function git_branch_config -d "Configurar Git Branch Helper"
             if not test -d "$new_dir"
                 echo "⚠️  Aviso: O diretório '$new_dir' não existe."
                 read -P "Deseja adicionar mesmo assim? [Y/n]: " confirm
-                if test "$confirm" = n -o "$confirm" = N
+                if test "$confirm" = n; or test "$confirm" = N
                     echo "❌ Operação cancelada."
                     return 0
                 end
@@ -138,7 +138,7 @@ function git_branch_config -d "Configurar Git Branch Helper"
             # Verificar se é um número (índice)
             if string match -qr '^\d+$' $target
                 set -l index $target
-                if test $index -lt 1 -o $index -gt (count $GIT_BRANCH_ALLOWED_PREFIXES)
+                if test $index -lt 1; or test $index -gt (count $GIT_BRANCH_ALLOWED_PREFIXES)
                     echo "❌ Índice inválido. Use 'git_branch_config list' para ver os índices."
                     return 1
                 end
@@ -202,24 +202,24 @@ function git_branch_config -d "Configurar Git Branch Helper"
                 echo ""
 
                 read -P "Escolha [1/2] (Enter = 1): " choice
-                set -l __read_status $status
-                if test $__read_status -eq 130
+                set -l read_exit_code $status
+                if test $read_exit_code -eq 130
                     echo "❌ Operação cancelada."
                     return 130
-                else if test $__read_status -ne 0
+                else if test $read_exit_code -ne 0
                     echo "❌ Operação cancelada."
                     return 130
                 end
 
-                if test -z "$choice" -o "$choice" = 1
+                if test -z "$choice"; or test "$choice" = 1
                     set new_username (whoami)
                 else if test "$choice" = 2
                     read -P "Digite o username: " new_username
-                    set -l __read_status $status
-                    if test $__read_status -eq 130
+                    set -l read_exit_code $status
+                    if test $read_exit_code -eq 130
                         echo "❌ Operação cancelada."
                         return 130
-                    else if test $__read_status -ne 0
+                    else if test $read_exit_code -ne 0
                         echo "❌ Operação cancelada."
                         return 130
                     end
@@ -242,7 +242,7 @@ function git_branch_config -d "Configurar Git Branch Helper"
         case reset
             # Resetar (limpar) configurações
             read -P "⚠️  Isso irá resetar todas as configurações. Continuar? [y/N]: " confirm
-            if test "$confirm" != y -a "$confirm" != Y
+            if test "$confirm" != y; and test "$confirm" != Y
                 echo "❌ Operação cancelada."
                 return 0
             end

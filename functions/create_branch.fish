@@ -1,5 +1,4 @@
 function create_branch -d "Criar branches Git com padrão personalizado"
-# Função para criar branches Git com padrão personalizado
     # Uso: create_branch
 
     # Verificar se estamos em um repositório Git
@@ -75,11 +74,11 @@ function create_branch -d "Criar branches Git com padrão personalizado"
         echo "  7) test    - Testes"
 
         read -P "📝 Digite o número ou nome do tipo de branch: " branch_type
-        set -l __read_status $status
-        if test $__read_status -eq 130
+        set -l read_exit_code $status
+        if test $read_exit_code -eq 130
             echo "❌ Operação cancelada."
             return 130
-        else if test $__read_status -ne 0
+        else if test $read_exit_code -ne 0
             echo "❌ Operação cancelada."
             return 130
         end
@@ -114,11 +113,11 @@ function create_branch -d "Criar branches Git com padrão personalizado"
     # 2. Obter o nome da branch (argumento ou prompt)
     if test -z "$branch_name"
         read -P "📝 Digite o nome da branch (ex: migração de tela xpto): " branch_name
-        set -l __read_status $status
-        if test $__read_status -eq 130
+        set -l read_exit_code $status
+        if test $read_exit_code -eq 130
             echo "❌ Operação cancelada."
             return 130
-        else if test $__read_status -ne 0
+        else if test $read_exit_code -ne 0
             echo "❌ Operação cancelada."
             return 130
         end
@@ -184,16 +183,16 @@ function create_branch -d "Criar branches Git com padrão personalizado"
     # Confirmar criação
     if test $auto_confirm -ne 1
         read -P "✅ Criar esta branch? [Y/n]: " confirm
-        set -l __read_status $status
-        if test $__read_status -eq 130
+        set -l read_exit_code $status
+        if test $read_exit_code -eq 130
             echo "❌ Operação cancelada."
             return 130
-        else if test $__read_status -ne 0
+        else if test $read_exit_code -ne 0
             echo "❌ Operação cancelada."
             return 130
         end
 
-        if test "$confirm" = n -o "$confirm" = N
+        if test "$confirm" = n; or test "$confirm" = N
             echo "❌ Operação cancelada."
             return 0
         end
