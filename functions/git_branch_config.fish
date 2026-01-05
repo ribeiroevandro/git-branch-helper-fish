@@ -180,7 +180,7 @@ function git_branch_config -d "Configurar Git Branch Helper"
             else
                 set -l index 1
                 for dir in $GIT_BRANCH_ALLOWED_PREFIXES
-                    set -l display_dir (string replace -r "^$HOME" '~' $dir)
+                    set -l display_dir (string replace -r "^$HOME" '~' -- $dir)
                     if test -d $dir
                         echo "  $index) $display_dir ✓"
                     else
