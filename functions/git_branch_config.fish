@@ -9,6 +9,15 @@ function git_branch_config -d "Configurar Git Branch Helper"
     end
     set -l __gbh_user_conf_file "$__gbh_root/conf.d/git-branch-helper.user.fish"
 
+    # Helper para tratar cancelamento de read (Ctrl+C)
+    function __gbh_check_read_cancelled --argument-names read_exit_code
+        if test $read_exit_code -eq 130; or test $read_exit_code -ne 0
+            echo "❌ Operação cancelada."
+            return 130
+        end
+        return 0
+    end
+
     function __gbh_save_config --argument-names username prefixes config_file
         set -l tmp (command mktemp)
         echo "# Git Branch Helper - configuração do usuário (auto-gerado)" >"$tmp"
@@ -28,7 +37,17 @@ function git_branch_config -d "Configurar Git Branch Helper"
         echo "" >>"$tmp"
 
         command mv "$tmp" "$config_file"
-        command chmod 600 "$config_file" 2>/dev/null
+        set -l mv_status $status
+        if test $mv_status -ne 0
+            echo "❌ Falha ao atualizar arquivo de configuração: $config_file" >&2
+            if test -n "$tmp"
+                command rm -f "$tmp" 2>/dev/null
+            end
+            return $mv_status
+        end
+        if not command chmod 600 "$config_file"
+            echo "⚠️  Aviso: não foi possível definir permissões (chmod 600) para '$config_file'." >&2
+        end
     end
 
     function __gbh_ensure_username --argument-names user_conf_file
@@ -44,35 +63,23 @@ function git_branch_config -d "Configurar Git Branch Helper"
         echo ""
 
         read -P "Escolha [1/2] (Enter = 1): " choice
-        set -l read_exit_code $status
-        if test $read_exit_code -eq 130
-            echo "❌ Operação cancelada."
-            return 130
-        else if test $read_exit_code -ne 0
-            echo "❌ Operação cancelada."
-            return 130
-        end
+        __gbh_check_read_cancelled $status
+        or return $status
 
         set -l selected ""
         if test -z "$choice"; or test "$choice" = 1
             set selected (whoami)
         else if test "$choice" = 2
             read -P "Digite o username: " selected
-            set -l read_exit_code $status
-            if test $read_exit_code -eq 130
-                echo "❌ Operação cancelada."
-                return 130
-            else if test $read_exit_code -ne 0
-                echo "❌ Operação cancelada."
-                return 130
+            __gbh_check_read_cancelled $status
+            or return $status
+            
+            if test -z "$selected"
+                echo "❌ Username não pode estar vazio."
+                return 1
             end
         else
             echo "❌ Opção inválida: $choice"
-            return 1
-        end
-
-        if test -z "$selected"
-            echo "❌ Username não pode estar vazio."
             return 1
         end
 
@@ -90,10 +97,9 @@ function git_branch_config -d "Configurar Git Branch Helper"
                 return 1
             end
             
+            # Fish já faz a expansão de ~ (incluindo ~usuario) ao interpretar os argumentos,
+            # então $argv[2] já contém o caminho expandido.
             set -l new_dir $argv[2]
-            
-            # Expandir ~ para $HOME
-            set new_dir (string replace -r '^~' $HOME $new_dir)
             
             # Verificar se diretório existe
             if not test -d "$new_dir"
@@ -130,10 +136,9 @@ function git_branch_config -d "Configurar Git Branch Helper"
                 return 1
             end
             
+            # Fish já faz a expansão de ~ (incluindo ~usuario) ao interpretar os argumentos,
+            # então $argv[2] já contém o caminho expandido.
             set -l target $argv[2]
-            
-            # Expandir ~ para $HOME
-            set target (string replace -r '^~' $HOME $target)
             
             # Verificar se é um número (índice)
             if string match -qr '^\d+$' $target
@@ -175,7 +180,7 @@ function git_branch_config -d "Configurar Git Branch Helper"
             else
                 set -l index 1
                 for dir in $GIT_BRANCH_ALLOWED_PREFIXES
-                    set -l display_dir (string replace $HOME '~' $dir)
+                    set -l display_dir (string replace -r "^$HOME" '~' -- $dir)
                     if test -d $dir
                         echo "  $index) $display_dir ✓"
                     else
@@ -202,27 +207,15 @@ function git_branch_config -d "Configurar Git Branch Helper"
                 echo ""
 
                 read -P "Escolha [1/2] (Enter = 1): " choice
-                set -l read_exit_code $status
-                if test $read_exit_code -eq 130
-                    echo "❌ Operação cancelada."
-                    return 130
-                else if test $read_exit_code -ne 0
-                    echo "❌ Operação cancelada."
-                    return 130
-                end
+                __gbh_check_read_cancelled $status
+                or return $status
 
                 if test -z "$choice"; or test "$choice" = 1
                     set new_username (whoami)
                 else if test "$choice" = 2
                     read -P "Digite o username: " new_username
-                    set -l read_exit_code $status
-                    if test $read_exit_code -eq 130
-                        echo "❌ Operação cancelada."
-                        return 130
-                    else if test $read_exit_code -ne 0
-                        echo "❌ Operação cancelada."
-                        return 130
-                    end
+                    __gbh_check_read_cancelled $status
+                    or return $status
                 else
                     echo "❌ Opção inválida: $choice"
                     return 1
@@ -268,7 +261,7 @@ function git_branch_config -d "Configurar Git Branch Helper"
                 echo "   (nenhum)"
             else
                 for dir in $GIT_BRANCH_ALLOWED_PREFIXES
-                    set -l display_dir (string replace $HOME '~' $dir)
+                    set -l display_dir (string replace -r "^$HOME" '~' -- $dir)
                     if test -d $dir
                         echo "   ✓ $display_dir"
                     else
@@ -304,7 +297,20 @@ function git_branch_config -d "Configurar Git Branch Helper"
             
         case '*'
             echo "❌ Comando desconhecido: $command"
-            echo "Use 'git_branch_config help' para ver os comandos disponíveis"
+            # Sugerir comando mais parecido, se houver
+            set -l __gbh_known_commands add remove list username show reset help
+            set -l __gbh_suggestion ''
+            for __gbh_cmd in $__gbh_known_commands
+                if string match -qi -- "$command"* $__gbh_cmd
+                    set __gbh_suggestion $__gbh_cmd
+                    break
+                end
+            end
+            if test -n "$__gbh_suggestion"
+                echo "💡 Você quis dizer: 'git_branch_config $__gbh_suggestion'?"
+            else
+                echo "Use 'git_branch_config help' para ver os comandos disponíveis"
+            end
             return 1
     end
 end
