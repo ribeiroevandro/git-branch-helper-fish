@@ -1,0 +1,23 @@
+---
+alwaysApply: true
+---
+
+# Commit Message Conventions
+
+All commits must follow the Conventional Commits format strictly:
+
+- **Format:** `<type>[optional scope]: <description>`
+- **Semantic types:**
+  - `feat` (new feature, MINOR version bump)
+  - `fix` (bug fix, PATCH version bump)
+  - `docs` (documentation)
+  - `style` (formatting)
+  - `refactor` (code refactoring)
+  - `perf` (performance improvement)
+  - `test` (adding/refactoring tests)
+  - `chore` (maintenance/build)
+  - `ci` (CI/CD related changes)
+- **Scope:** Use a scope (e.g., `login`, `notifications`, `payments`) to describe the part of the codebase affected, when applicable.
+- **Breaking changes:** If a commit introduces a breaking change, add an exclamation mark (!) after the type/scope (e.g., `feat(auth)!: remove old login API`).
+- **Description:** Keep descriptions concise, imperative, and in the present tense (e.g., `add`, `fix`, `refactor`).
+- **One task per commit:** Each commit should represent a single task or change.
